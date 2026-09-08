@@ -246,7 +246,7 @@ export function markdownToHtml(markdown, seen = new Map()) {
         const checkbox = content.match(/^\[( |x|X)\]\s+(.*)$/);
         if (checkbox) {
           const checked = checkbox[1].toLowerCase() === 'x' ? ' checked' : '';
-          content = `<input type="checkbox" disabled${checked}> ${checkbox[2]}`;
+          content = `<input type="checkbox" disabled${checked}> ${renderInline(checkbox[2])}`;
           items.push(`<li class="task">${content.replace(/^(<input[^>]*>) /, '$1 ')}</li>`);
         } else {
           items.push(`<li>${renderInline(content)}</li>`);

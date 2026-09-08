@@ -94,6 +94,20 @@ test('markdownToHtml rejects javascript: hrefs', () => {
   assert.match(html, /<a href="#">click<\/a>/);
 });
 
+test('markdownToHtml escapes HTML in checkbox text', () => {
+  const payload = `<img src="data:," onerror="alert('Demo XSS')">`;
+  for (const marker of ['[ ]', '[x]', '[X]']) {
+    const html = markdownToHtml(`- ${marker} ${payload}`);
+    assert.match(html, /&lt;img/, `${marker} should escape the img tag`);
+    assert.equal(html.includes('<img '), false, `${marker} must not contain a live <img> tag`);
+    assert.match(html, /<input type="checkbox" disabled(?: checked)?>/, `${marker} should keep the disabled checkbox`);
+  }
+
+  const rich = markdownToHtml('- [x] **bold** and a [link](https://example.com)');
+  assert.match(rich, /<strong>bold<\/strong>/);
+  assert.match(rich, /<a href="https:\/\/example.com">link<\/a>/);
+});
+
 test('merge writes markdown plus html, and --prune only deletes after a dry run shows it', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'orchestrate-'));
   const docs = path.join(root, 'billing-export');

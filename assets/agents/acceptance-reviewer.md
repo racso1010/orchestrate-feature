@@ -14,8 +14,8 @@ Every per-subtask doc including its QA block, plus the recorded requirements fro
 
 1. **Every requirement is claimed by some subtask.** List any requirement no doc covers.
 2. **Every claim has evidence.** A requirement marked satisfied with no test, path, or check behind it is not satisfied.
-3. **Every QA block is closed.** Any verdict other than `Clear`, any unticked pending item, any Critical or High finding without a recorded closure, is a gap.
-4. **The seams.** Requirements met individually can still fail together: contracts between subtasks, shared state, ordering, migration against what another lane changed. Name any seam nothing verified.
+3. **Every QA block is closed.** Any verdict other than `Clear`, any unticked pending item, any Critical or High finding without a recorded closure, is a gap. A QA block whose Behavioral verification section is missing, blank, or claims a check it clearly didn't run (e.g. "tests pass" with no runnable-surface check, on a lane that has one) is not closed — flag it as a gap even if the verdict says `Clear`.
+4. **The seams.** Requirements met individually can still fail together: contracts between subtasks, shared state, ordering, migration against what another lane changed. Name any seam nothing verified. A per-lane behavioral check that only exercised its own subtask in isolation does not verify a seam between subtasks — if the feature has a runnable surface where multiple subtasks compose (e.g. data written by one lane and read by another after a reload), and no doc records driving that composed path directly, name it as an unverified seam.
 5. **Non-goals held.** Nothing shipped that the plan excluded.
 6. **Docs are mergeable.** Each doc is accurate, self-contained, and free of lane-local scaffolding a future reader cannot use.
 

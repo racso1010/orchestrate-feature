@@ -12,7 +12,7 @@ Send one message containing all six questions. Offer the defaults below so the u
 2. **Implementer** — which engine and model builds the subtasks? (fresh subagent, always)
 3. **QA reviewer** — which engine and model reviews each lane against its requirements? (fresh subagent, always, never the same session as its implementer)
 4. **Security auditor** — which engine and model runs the security gate? (fresh subagent; may be "same as QA")
-5. **Acceptance reviewer** — which engine and model does the final requirements-vs-docs pass? (fresh subagent that implemented nothing)
+5. **Acceptance reviewer** — which engine and model does the final requirements-vs-docs pass? (fresh subagent that implemented nothing; prefer a different vendor from the implementer if one is authenticated and available — this is the highest-leverage seat for cross-vendor review)
 6. **Documentation merger** — which engine and model writes the merged Markdown and HTML? (May be "parent".)
 
 Also confirm, in the same message:
@@ -30,10 +30,12 @@ Do not proceed on silence. If the user says "you decide", say which routing you 
 | Implementer | strongest available coding model on the user's primary CLI | most of the run's cost and risk sits here |
 | QA reviewer | a **different vendor** from the implementer | different failure modes; a model rarely catches its own blind spot |
 | Security auditor | same as QA, or a reasoning-heavy model | adversarial reading, not code generation |
-| Acceptance reviewer | the planning model, fresh session | it knows the requirement shape best |
+| Acceptance reviewer | a **different vendor** from the implementer, if one is authenticated and available; otherwise the planning model, fresh session | it is the last gate and reads everything — the single highest-leverage seat for cross-vendor review |
 | Documentation merger | a cheaper fast model, or parent | mostly deterministic assembly |
 
-Cross-vendor QA is a recommendation, not a rule. A fresh session of the same model is acceptable — record the reduced independence in the tracker.
+Cross-vendor QA and cross-vendor acceptance review are recommendations, not rules. A fresh session of the same model is acceptable for either — record the reduced independence in the tracker. Fresh-session review eliminates anchoring (the reviewer can't be argued into the implementer's conclusion); only a different vendor addresses *correlated* blind spots, where implementer and reviewer share the same training-driven instincts and walk past the same defect because it "looks right" to both. If only one cross-vendor slot is worth the extra setup cost, spend it on acceptance, not QA — it is the last chance to catch anything QA missed.
+
+Regardless of routing, behavioral verification (see `lane-protocol.md`'s QA section) is not optional and is not a substitute for cross-vendor review, nor the reverse — a test suite and a reviewing model can share the same false assumption; an actually-running app, or a balance that moved from 10000 to 8201, cannot.
 
 ## Recording the answer
 

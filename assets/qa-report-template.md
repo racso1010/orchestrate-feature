@@ -25,6 +25,13 @@ Admit a finding only with a concrete failure, realistic reachability, practical 
 Triggers checked: <list, or "none applied — reason">
 Result: <clear, or findings above by number>
 
+### Behavioral verification
+
+Reading the diff and its own tests is not sufficient evidence — record at least one check that exercised the built artifact directly.
+
+- Check performed: <drove the app/CLI/API through the changed path / seeded adversarial or boundary input / reverted the fix and confirmed the guarding test went red / no runnable surface — reason>
+- Result: <observed behavior, or "not applicable" with reason>
+
 ### Tests
 
 - Present and run: yes / no

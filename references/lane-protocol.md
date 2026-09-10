@@ -44,6 +44,7 @@ It checks:
 - Nothing outside the owned scope changed.
 - Security triggers from `security-gates.md`, where they apply.
 - Error paths, boundaries, and empty or failure states.
+- **Behavioral verification.** Reading the diff and rerunning the given tests is not enough — a test suite can share the same false assumption as the code it tests (e.g. a function defined but never called from the running path, where the test calls it directly and passes). For any lane whose subtask has a runnable surface, do at least one check that exercises the built artifact directly rather than through its own tests: drive the actual app/CLI/API through the changed path, seed adversarial or boundary input the tests don't cover, or revert the fix locally and confirm the test that's supposed to guard it actually goes red. Record what was run and its result in the QA report. If no runnable surface exists (pure refactor with no behavior change, docs-only, etc.), say so explicitly rather than leaving it blank.
 
 It appends a verdict block to the same feature doc using `assets/qa-report-template.md`. It never edits source files and never rewrites the implementer's sections — it appends.
 

@@ -1,85 +1,78 @@
 # Model routing
 
-Contents: [The gate](#the-gate) · [Defaults to propose](#defaults-to-propose) · [Recording the answer](#recording-the-answer) · [Launchers](#launchers) · [Safety](#safety) · [Failure handling](#failure-handling)
+Contents: [The gate](#the-gate) · [Defaults](#defaults) · [Recording](#recording) · [Launchers](#launchers) · [Safety](#safety) · [Failure handling](#failure-handling)
 
-Planning runs on the currently selected model/session unless the user moves it. Every other role — implementer, QA reviewer, security auditor, acceptance reviewer, documentation merger — is a **separate fresh-session subagent**, and each one's engine and model is decided explicitly here, never assumed or inherited from planning. **Never launch a child before this gate is answered.**
+Planning runs on the parent's current model. Every other role is a separate session whose engine and model is decided here, never inherited. **Never launch a child before this gate is answered.**
+
+The doc merge is a script the parent runs, so it is not a routed role.
 
 ## The gate
 
-Send one message containing all six questions. Offer the defaults below so the user can reply with a single word. Ask for a real choice on every role — do not skip a role because it seems minor or because an earlier answer seems like it should imply it.
+If `.plans/routing.md` exists, show it and ask one question: **"Reuse saved routing? (yes / change …)"**. Otherwise send one message with the defaults below so the user can reply "defaults":
 
-1. **Planning** — confirm it stays on the current model/session, or move it to a fresh subagent too?
-2. **Implementer** — which engine and model builds the subtasks? (fresh subagent, always)
-3. **QA reviewer** — which engine and model reviews each lane against its requirements? (fresh subagent, always, never the same session as its implementer)
-4. **Security auditor** — which engine and model runs the security gate? (fresh subagent; may be "same as QA")
-5. **Acceptance reviewer** — which engine and model does the final requirements-vs-docs pass? (fresh subagent that implemented nothing; prefer a different vendor from the implementer if one is authenticated and available — this is the highest-leverage seat for cross-vendor review)
-6. **Documentation merger** — which engine and model writes the merged Markdown and HTML? (May be "parent".)
+1. **Planning** stays on the current session? (or move it to a subagent)
+2. **Implementer** engine and model.
+3. **QA reviewer** engine and model. Never the implementer's session.
+4. **Security auditor**: Heavy only. Lite and Quick combine it with QA, so ask only if the user wants it separate.
+5. **Acceptance reviewer** (Quick, Heavy): fresh session that implemented nothing. Prefer a different vendor from the implementer.
+6. Per-subtask overrides and per-lane caps, if any.
 
-Also confirm, in the same message:
+Ask for a real choice on every role. "You decide" → state the routing you chose and why, and record it as a parent decision. After the answer, offer to save it to `.plans/routing.md` for the next run.
 
-- **Per-subtask overrides** — any subtask that should use a different model than the default implementer?
-- **Budget or turn caps** — a ceiling per lane, if they want one.
-
-Do not proceed on silence. If the user says "you decide", say which routing you are taking and why, record it as a parent decision, and continue.
-
-## Defaults to propose
+## Defaults
 
 | Role | Default | Why |
 |---|---|---|
-| Planning | current model | already holds the conversation and repository context |
-| Implementer | strongest available coding model on the user's primary CLI | most of the run's cost and risk sits here |
-| QA reviewer | a **different vendor** from the implementer | different failure modes; a model rarely catches its own blind spot |
-| Security auditor | same as QA, or a reasoning-heavy model | adversarial reading, not code generation |
-| Acceptance reviewer | a **different vendor** from the implementer, if one is authenticated and available; otherwise the planning model, fresh session | it is the last gate and reads everything — the single highest-leverage seat for cross-vendor review |
-| Documentation merger | a cheaper fast model, or parent | mostly deterministic assembly |
+| Planning | current model | already holds the requirements and repo context |
+| Implementer | a strong **mid-tier** coding model (e.g. Sonnet); top tier only for subtasks the plan flags as hard | most of the run's tokens are spent here |
+| QA reviewer | mid-tier, ideally a different vendor | bounded read of one diff; independence matters more than size |
+| Security auditor | same as QA, or a reasoning-heavy model | adversarial reading |
+| Acceptance reviewer | different vendor if authenticated, else the strongest model in a fresh session | last gate, reads everything; the one seat worth the top tier |
 
-Cross-vendor QA and cross-vendor acceptance review are recommendations, not rules. A fresh session of the same model is acceptable for either — record the reduced independence in the tracker. Fresh-session review eliminates anchoring (the reviewer can't be argued into the implementer's conclusion); only a different vendor addresses *correlated* blind spots, where implementer and reviewer share the same training-driven instincts and walk past the same defect because it "looks right" to both. If only one cross-vendor slot is worth the extra setup cost, spend it on acceptance, not QA — it is the last chance to catch anything QA missed.
+Fresh-session review removes anchoring. Only a different vendor removes *correlated* blind spots. If only one cross-vendor seat is worth the setup cost, spend it on acceptance. Same-model fresh sessions are acceptable; record the reduced independence. Neither replaces the behavioral checks in `lane-protocol.md`.
 
-Regardless of routing, behavioral verification (see `lane-protocol.md`'s QA section) is not optional and is not a substitute for cross-vendor review, nor the reverse — a test suite and a reviewing model can share the same false assumption; an actually-running app, or a balance that moved from 10000 to 8201, cannot.
+## Recording
 
-## Recording the answer
-
-Write the routing table into `.plans/<feature-slug>.md` before Phase 3 ends, and repeat the resolved engine and model in each lane's tracker row. If the user changes routing mid-run, record the change and the first subtask ID it applies to. Never silently reroute.
+Write the routing table into the plan before lanes start and repeat each lane's engine/model in its tracker row. Mid-run changes are recorded with the first subtask they apply to. Never silently reroute.
 
 ## Launchers
 
-Prefer the host's native subagent tool when it can reach the routed model — this skill runs on any AI coding tool that exposes one, not only Claude Code. Use a CLI only when the host itself can't reach the routed engine/model. Follow `use-subagents` for isolation, supervision, verification, and cleanup regardless of launcher.
-
-`scripts/run-lane.mjs` wraps three known CLIs (`claude`, `codex`, `cursor-agent`) with a uniform interface, a timeout, and captured output. These three are examples, not a closed list — any non-interactive agent CLI that supports a read-only mode and a writing mode can be routed to the same way; add it to `run-lane.mjs` or invoke it directly, following the same read-only/writing split and the Safety rules below.
+Prefer the host's native subagent tool when it can reach the routed model. It shares the host's caching and avoids a CLI cold start. Use `scripts/run-lane.mjs` only to reach an engine the host cannot.
 
 ```sh
 node scripts/run-lane.mjs --check
-node scripts/run-lane.mjs --engine codex --model <id> --mode write \
+node scripts/run-lane.mjs --engine claude --model <id> --mode write \
   --cwd /path/to/worktree --assignment .plans/lanes/T02.md \
   --out .plans/lanes/T02.out.md --timeout 2400
+# fix round: continue the same implementer session
+node scripts/run-lane.mjs --engine claude --mode write --resume <session> \
+  --assignment .plans/lanes/T02.fix1.md --out .plans/lanes/T02.fix1.out.md --timeout 1200
 ```
 
-Underlying shapes, for reference — **verify with `<cli> --help` before relying on any flag**, since all three move fast:
+For claude lanes the launcher adds `--strict-mcp-config --disable-slash-commands`. Lanes need no MCP servers or skills, and loading them added ~30% input tokens per turn when measured. It also prints a `usage:` line (tokens, cost, session id). Copy it into the tracker row.
 
-| Engine | Read-only lane | Writing lane |
-|---|---|---|
-| `claude` | `claude -p --model M --output-format json --permission-mode plan` | `claude -p --model M --output-format json --permission-mode acceptEdits` |
-| `codex` | `codex exec --model M --sandbox read-only --skip-git-repo-check` | `codex exec --model M --sandbox workspace-write --skip-git-repo-check` |
-| `cursor-agent` | `cursor-agent -p --model M --output-format text` | `cursor-agent -p --model M --force --output-format text` |
+Underlying shapes. **Verify with `<cli> --help`**, since flags move:
 
-Notes that matter in practice:
+| Engine | Read-only lane | Writing lane | Resume |
+|---|---|---|---|
+| `claude` | `claude -p --output-format json --permission-mode plan` | `… --permission-mode acceptEdits` | `--resume <session>` |
+| `codex` | `codex exec --sandbox read-only --skip-git-repo-check` | `… --sandbox workspace-write` | not wired; fresh fix lane |
+| `cursor-agent` | `cursor-agent -p --output-format text` | `… --force` | `--resume <chatId>` |
 
-- Cursor print mode only *proposes* edits without `--force`; a writing lane without it silently produces nothing.
-- Codex `--sandbox read-only` is the real guarantee for a reviewer lane; approval flags do not apply in `exec`.
-- Claude's `--permission-mode plan` keeps a reviewer from editing. Prefer it over trusting the prompt.
-- Pass the assignment as a file and reference its path. Long prompts on the command line get truncated or mangled by the shell.
+- Cursor without `--force` only *proposes* edits, so a writing lane silently produces nothing.
+- Codex `--sandbox read-only` and Claude `--permission-mode plan` are the real read-only guarantee for reviewers.
+- Pass the assignment as a file. Long command-line prompts get mangled.
+- Other non-interactive CLIs work the same way if they have a read-only and a writing mode.
 
 ## Safety
 
-- Never pass secrets, tokens, `.env` contents, or private transcripts into a lane prompt. Send paths and facts, not credentials.
-- Never use a bypass flag (`--dangerously-skip-permissions`, `--yolo`, `--sandbox danger-full-access`) without explicit per-run user approval, recorded in the tracker.
-- Reviewer lanes are read-only. Enforce that with the engine's flag, not with wording in the prompt.
-- Give every lane a `--timeout`. An unbounded child is an unsupervised child.
-- One accountable launcher per lane. Never let two launchers drive the same working directory.
+- Never pass secrets, tokens, `.env` contents, or transcripts into a lane. Send paths and facts.
+- No bypass flag (`--dangerously-skip-permissions`, `--yolo`, `--sandbox danger-full-access`) without explicit per-run approval recorded in the tracker.
+- Every lane has a `--timeout`. One launcher per working directory.
 
 ## Failure handling
 
-- Engine missing or unauthenticated → report it, offer the routed alternatives, and ask. Do not silently substitute a model.
-- Non-zero exit or timeout → treat the lane as failed, keep the output for evidence, and inspect the working directory before relaunching.
-- Identical failure twice → change the approach or the routing. Do not blind-retry.
-- No safe launcher at all → ask whether the user accepts a disclosed parent fallback. Without approval the run is `Blocked`. Never claim independent review for a parent fallback.
+- Engine missing or unauthenticated → report it, offer alternatives, ask. Never silently substitute.
+- Non-zero exit or timeout → lane failed; keep the output, inspect the directory before relaunching.
+- Same failure twice → change approach or routing. No blind retries.
+- No safe launcher → ask whether a disclosed parent fallback is acceptable; otherwise `Blocked`. Never claim independent review for a parent fallback.

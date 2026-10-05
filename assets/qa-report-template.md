@@ -1,56 +1,19 @@
-<!-- Appended by the QA reviewer to the bottom of the subtask's feature doc. Never rewrite the implementer's sections. -->
+<!-- Appended by the reviewer to the bottom of the lane's feature doc. Never rewrite the sections above. -->
 
-## QA review — <T0n>
+## QA — <T0n> (round <n>)
 
-- **Reviewer:** <engine/model, fresh session>
-- **Reviewed:** feature doc + lane diff vs <baseline> + requirements R01, R03
-- **Verdict:** `Clear` | `Changes required` | `Human decision required` | `Blocked`
+**Reviewer:** <engine/model> · **Verdict:** `Clear` | `Changes required` | `Human decision required` | `Blocked`
+**Coverage:** R01 ✓ · R03 ✗ (finding 1) · **Security triggers:** <list> → <clear / finding #s>, or "none — reason"
+**Tests:** <adequate, or what is missing / incidental> · **Doc drift:** <none, or list>
+**Behavioral check:** <command → observed result>, or "not required (lane not risky)"
 
-### Requirement coverage
+| # | Severity | Location | Failure | Smallest fix |
+|---|---|---|---|---|
 
-| Requirement | Satisfied | Evidence in diff |
-|---|---|---|
-| R01 | yes / no / partial | <path:line or test name> |
+Or: "No material findings."
 
-### Findings
-
-Admit a finding only with a concrete failure, realistic reachability, practical impact, and an action justified now. "No material findings" is a valid outcome — say it plainly rather than padding.
-
-| # | Severity | Location | Failure | Smallest fix | Proof after fix |
-|---|---|---|---|---|---|
-| 1 | Critical / High / Medium / Low | `path:line` | | | |
-
-### Security gate
-
-Triggers checked: <list, or "none applied — reason">
-Result: <clear, or findings above by number>
-
-### Behavioral verification
-
-Reading the diff and its own tests is not sufficient evidence — record at least one check that exercised the built artifact directly.
-
-- Check performed: <drove the app/CLI/API through the changed path / seeded adversarial or boundary input / reverted the fix and confirmed the guarding test went red / no runnable surface — reason>
-- Result: <observed behavior, or "not applicable" with reason>
-
-### Tests
-
-- Present and run: yes / no
-- Cover the stated behavior and its boundary: yes / no — <what is missing>
-- Would fail on regression: yes / no — <why>
-- Asserting incidental detail: <list, or none>
-
-### Doc accuracy
-
-Drift between the doc and the code: <list, or none>
-
-### Pending for the implementer
-
+Pending for the implementer:
 - [ ] <finding # — exact required change>
 
-<!-- Parent fills this in after dispositioning. Children never write here. -->
-
-### Parent disposition
-
-| Finding | Disposition | Reason | Closure |
-|---|---|---|---|
-| 1 | Fix now / Validate / Reject / Ask user / Block | | round 1 → `Clear` |
+<!-- Parent fills this in. -->
+**Disposition:** <finding # → Fix now / Validate / Reject / Ask user / Block — reason>

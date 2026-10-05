@@ -1,7 +1,5 @@
 # Security gates
 
-Contents: [Triggers](#triggers) · [Universal checks](#universal-checks) · [By surface](#by-surface) · [Stack notes](#stack-notes) · [Severity and disposition](#severity-and-disposition) · [Reporting](#reporting)
-
 Security review is a gate on the lane, not a final sweep. Run it while the lane is still open and cheap to fix.
 
 ## Triggers
@@ -43,15 +41,8 @@ No trigger matched → record "no security trigger" in the tracker with the reas
 
 ## Severity and disposition
 
-| Severity | Meaning | Default disposition |
-|---|---|---|
-| Critical | remote exploit, auth bypass, data exposure | `Fix now`, lane cannot be `Verified` |
-| High | exploitable with preconditions, or privilege escalation | `Fix now` |
-| Medium | real weakness, limited reach or impact | `Fix now` or `Ask user` with a recorded reason |
-| Low | hardening, defense in depth | `Validate` or `Reject` with a reason |
-
-A Critical or High finding blocks the lane. It cannot be dispositioned `Reject` without explicit user approval recorded in the tracker.
+Severity meanings live in `assets/agents/security-auditor.md`. Default dispositions: Critical → `Fix now`, lane cannot be `Verified` · High → `Fix now` · Medium → `Fix now` or `Ask user` with a reason · Low → `Validate` or `Reject` with a reason. A Critical or High finding is never `Reject`ed without explicit user approval recorded in the tracker.
 
 ## Reporting
 
-Findings go in the lane's QA verdict block: severity, exact file and line, the concrete failure, realistic reachability, the smallest fix, and the check that proves the fix. No speculative findings, no padded lists — an unexploitable "issue" costs review attention that the real ones need.
+Findings go in the lane's QA block with the auditor's per-finding fields. No speculative findings or padded lists.

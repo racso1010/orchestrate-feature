@@ -17,6 +17,8 @@ Required:
 
 Options:
   --model <id>          Model id for the engine. Omit to use the engine default.
+  --resume <session>    Continue an earlier lane session (fix rounds) instead of
+                        cold-starting. claude and cursor only.
   --mode <read|write>   read = reviewer (no edits). write = implementer. Default: read.
   --cwd <dir>           Authorized working directory. Default: current directory.
   --out <file>          Write the transcript here as well as to stdout.
@@ -31,18 +33,26 @@ Options:
 Flags move between CLI releases. Run '<bin> --help' and confirm the resolved
 command with --print-command before trusting an unattended run.
 
+claude lanes skip MCP servers and skills (--strict-mcp-config,
+--disable-slash-commands): lanes need neither, and loading them costs ~30% more
+input tokens on every turn. Pass them back with --engine-arg if a lane needs one.
+
 Never pass secrets in the assignment. Never add a permission-bypass argument
 without explicit, recorded user approval.
 
 Exit codes: 0 success, 1 lane failure or timeout, 2 usage error, 127 engine missing.
-Transcript goes to stdout; diagnostics go to stderr.
+Transcript goes to stdout; diagnostics go to stderr. For claude lanes a
+'usage:' line on stderr (and in the --out header) reports tokens, cost and the
+session id to pass to --resume.
 `;
 
 const ENGINES = {
   claude: {
     bin: 'claude',
-    build: ({ prompt, model, mode }) => {
-      const argv = ['-p', prompt, '--output-format', 'json'];
+    resume: true,
+    build: ({ prompt, model, mode, resume }) => {
+      const argv = ['-p', prompt, '--output-format', 'json', '--strict-mcp-config', '--disable-slash-commands'];
+      if (resume) argv.push('--resume', resume);
       if (model) argv.push('--model', model);
       argv.push('--permission-mode', mode === 'write' ? 'acceptEdits' : 'plan');
       return argv;
@@ -59,8 +69,10 @@ const ENGINES = {
   },
   cursor: {
     bin: 'cursor-agent',
-    build: ({ prompt, model, mode }) => {
+    resume: true,
+    build: ({ prompt, model, mode, resume }) => {
       const argv = ['-p', prompt, '--output-format', 'text'];
+      if (resume) argv.push('--resume', resume);
       if (model) argv.push('--model', model);
       if (mode === 'write') argv.push('--force');
       return argv;
@@ -68,15 +80,34 @@ const ENGINES = {
   },
 };
 
-export function buildCommand({ engine, prompt, model, mode = 'read', bin, extra = [] }) {
+export function buildCommand({ engine, prompt, model, mode = 'read', resume, bin, extra = [] }) {
   const definition = ENGINES[engine];
   if (!definition) throw new Error(`unknown engine ${JSON.stringify(engine)}`);
   if (mode !== 'read' && mode !== 'write') throw new Error(`mode must be read or write, got ${JSON.stringify(mode)}`);
   if (!prompt || prompt.trim() === '') throw new Error('assignment is empty');
+  if (resume && !definition.resume) throw new Error(`${engine} lanes cannot be resumed; launch a fresh fix lane instead`);
   return {
     bin: bin ?? definition.bin,
-    argv: [...definition.build({ prompt, model, mode }), ...extra],
+    argv: [...definition.build({ prompt, model, mode, resume }), ...extra],
   };
+}
+
+// Pulls token usage, cost and session id out of `claude -p --output-format json`.
+// Returns null for any other transcript shape.
+export function summarizeUsage(transcript) {
+  let result;
+  try {
+    result = JSON.parse(transcript);
+  } catch {
+    return null;
+  }
+  if (!result || typeof result !== 'object' || !result.usage) return null;
+  const usage = result.usage;
+  const input = (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+  const cost = typeof result.total_cost_usd === 'number' ? ` cost=$${result.total_cost_usd.toFixed(4)}` : '';
+  const turns = result.num_turns === undefined ? '' : ` turns=${result.num_turns}`;
+  const session = result.session_id ? ` session=${result.session_id}` : '';
+  return `in=${input} out=${usage.output_tokens ?? 0}${cost}${turns}${session}`;
 }
 
 function redact(argv) {
@@ -108,6 +139,9 @@ function parseArguments(argv) {
         break;
       case '--model':
         options.model = take();
+        break;
+      case '--resume':
+        options.resume = take();
         break;
       case '--mode':
         options.mode = take();
@@ -238,6 +272,7 @@ async function main() {
       prompt,
       model: options.model,
       mode: options.mode,
+      resume: options.resume,
       bin: options.bin,
       extra: options.extra,
     });
@@ -263,11 +298,14 @@ async function main() {
 
   const transcript = result.stdout || result.stderr;
   process.stdout.write(transcript.endsWith('\n') ? transcript : `${transcript}\n`);
+  const usage = summarizeUsage(result.stdout);
+  if (usage) process.stderr.write(`usage: ${usage}\n`);
 
   if (options.out) {
     const header = [
       `<!-- lane: ${options.engine} model=${options.model ?? 'default'} mode=${options.mode} `,
-      `cwd=${cwd} exit=${result.code}${result.timedOut ? ' TIMED-OUT' : ''} duration=${seconds}s -->`,
+      `cwd=${cwd} exit=${result.code}${result.timedOut ? ' TIMED-OUT' : ''} duration=${seconds}s`,
+      `${usage ? ` usage: ${usage}` : ''} -->`,
       '',
     ].join('');
     await writeFile(path.resolve(options.out), `${header}\n${transcript}\n`, 'utf8');
@@ -283,7 +321,7 @@ async function main() {
     return result.code === 127 ? 127 : 1;
   }
 
-  process.stderr.write(`lane completed in ${seconds}s. Parent must review the diff and rerun checks.\n`);
+  process.stderr.write(`lane completed in ${seconds}s. Parent must review the diff before integrating.\n`);
   return 0;
 }
 

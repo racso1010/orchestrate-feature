@@ -2,7 +2,7 @@
 
 A skill that runs one end-to-end feature delivery workflow — clarification, model routing, phased planning, isolated implementer lanes, QA/security review, acceptance, and a merged doc handoff — from raw requirements to a documented, reviewed result.
 
-See [`SKILL.md`](./SKILL.md) for what the skill actually does. This README covers installation only.
+See [`SKILL.md`](./SKILL.md) for what the skill actually does, and [`docs/WORKFLOW.md`](./docs/WORKFLOW.md) for a stage-by-stage guide, what you need to provide, and token-cost notes. This README covers installation only.
 
 ## Supported tools
 

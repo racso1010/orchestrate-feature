@@ -1,4 +1,4 @@
-<!-- Front matter for the merged document. The merge script prepends this and appends each subtask doc as a section. Write it before running the merge; the script does not invent it. Save as docs/features/<feature-slug>.overview.md and pass it with --overview. -->
+<!-- Front matter for the merged document. The merge script prepends this and appends each subtask doc as a section. Write it before running the merge; the script does not invent it. Heavy runs only. Save as docs/features/<feature-slug>.overview.md and pass it with --overview. -->
 
 # <Feature name>
 

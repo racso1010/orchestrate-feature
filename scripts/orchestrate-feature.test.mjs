@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { mergeMarkdown, markdownToHtml, demoteHeadings, slugify, escapeHtml } from './merge-feature-docs.mjs';
-import { buildCommand } from './run-lane.mjs';
+import { buildCommand, summarizeUsage } from './run-lane.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const mergeScript = path.join(here, 'merge-feature-docs.mjs');
@@ -145,7 +145,7 @@ test('merge fails cleanly on a missing directory and on an empty one', async () 
 
 test('buildCommand keeps reviewer lanes read-only per engine', () => {
   const claude = buildCommand({ engine: 'claude', prompt: 'do', model: 'opus', mode: 'read' });
-  assert.deepEqual(claude.argv, ['-p', 'do', '--output-format', 'json', '--model', 'opus', '--permission-mode', 'plan']);
+  assert.deepEqual(claude.argv, ['-p', 'do', '--output-format', 'json', '--strict-mcp-config', '--disable-slash-commands', '--model', 'opus', '--permission-mode', 'plan']);
 
   const codex = buildCommand({ engine: 'codex', prompt: 'do', model: 'gpt', mode: 'read' });
   assert.ok(codex.argv.includes('read-only'));
@@ -158,6 +158,28 @@ test('buildCommand enables writes only in write mode', () => {
   assert.ok(buildCommand({ engine: 'claude', prompt: 'do', mode: 'write' }).argv.includes('acceptEdits'));
   assert.ok(buildCommand({ engine: 'codex', prompt: 'do', mode: 'write' }).argv.includes('workspace-write'));
   assert.ok(buildCommand({ engine: 'cursor', prompt: 'do', mode: 'write' }).argv.includes('--force'));
+});
+
+test('claude lanes skip MCP servers and skills, and only resumable engines resume', () => {
+  const claude = buildCommand({ engine: 'claude', prompt: 'do', mode: 'write', resume: 'abc' }).argv;
+  for (const flag of ['--strict-mcp-config', '--disable-slash-commands']) assert.ok(claude.includes(flag), flag);
+  assert.equal(claude[claude.indexOf('--resume') + 1], 'abc');
+  const cursor = buildCommand({ engine: 'cursor', prompt: 'do', resume: 'chat1' }).argv;
+  assert.equal(cursor[cursor.indexOf('--resume') + 1], 'chat1');
+  assert.equal(buildCommand({ engine: 'claude', prompt: 'do' }).argv.includes('--resume'), false);
+  assert.throws(() => buildCommand({ engine: 'codex', prompt: 'do', resume: 'x' }), /cannot be resumed/);
+});
+
+test('summarizeUsage reads claude JSON and ignores anything else', () => {
+  const transcript = JSON.stringify({
+    session_id: 's1',
+    num_turns: 3,
+    total_cost_usd: 0.12345,
+    usage: { input_tokens: 2, cache_creation_input_tokens: 100, cache_read_input_tokens: 900, output_tokens: 40 },
+  });
+  assert.equal(summarizeUsage(transcript), 'in=1002 out=40 cost=$0.1235 turns=3 session=s1');
+  assert.equal(summarizeUsage('plain text transcript'), null);
+  assert.equal(summarizeUsage('{"result":"no usage"}'), null);
 });
 
 test('buildCommand rejects bad input', () => {

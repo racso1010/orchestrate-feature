@@ -85,7 +85,7 @@ The phased-planning rule (later phases stay placeholders) already stops the bigg
 
 ### Cuts
 
-Applied: #1–#8 and #10–#15 (2026-10-05). #9 remains a recommendation in Phase 3.
+Applied: #1–#8 and #10–#22. #9 is superseded by #21 (code index is opt-in).
 
 | # | Change | Where | Expected effect |
 |---|---|---|---|
@@ -103,6 +103,13 @@ Applied: #1–#8 and #10–#15 (2026-10-05). #9 remains a recommendation in Phas
 | 12 | **Applied — each check runs once**: implementer runs lane tests; reviewer reads the output; parent runs the full suite once per phase; behavioral check per phase plus risky lanes | `lane-protocol.md` "Who runs what" | Lane-check runs on a 3-subtask Quick run: 18 → 7 |
 | 13 | **Applied — new parent session per phase**, resumed from the plan file | `SKILL.md` Phase 4 checkpoint | Parent stops carrying earlier phases' diffs |
 | 14 | **Applied — slimmer docs**: lane doc 4 sections, QA block 5 lines + findings table, overview Heavy-only, no merger role, Lite acceptance folded into its reviewer | `assets/*`, `execution-profiles.md` | Output scaffold −51%; −1 session on Lite |
+| 16 | **Applied — design spec first**: measure the design file once into `.plans/<slug>.design-spec.md`, build every UI lane to it, ask density/layout questions at the gate, one design audit at the end | `ui-design-intake.md`, `clarification-brief.md` | Avoids a restyle phase (≈8–10M on the kaseya-numbers run) |
+| 17 | **Applied — review level per lane** (`checks` / `combined` / `full`) by risk, not by profile | `lane-protocol.md`, `execution-profiles.md` | No reviewer on styling/repeat lanes; full review on auth, input, first-of-pattern |
+| 18 | **Applied — pattern groups**: repeats share one lane or continue the pattern-setter's session | `lane-protocol.md`, `implementer.md` | Repeats stop re-learning the pattern |
+| 19 | **Applied — environment check** before the first lane, recorded in the plan; lanes block on env errors instead of working around them | `SKILL.md` Phase 3 | Avoids blocked lanes such as host-vs-container `node_modules` |
+| 20 | **Applied — rate limits**: fewer parallel lanes near limits; interrupted lanes resume (`run-lane` prints the session id and a hint) | `execution-profiles.md`, `run-lane.mjs` | Partial runs are no longer thrown away |
+| 21 | **Applied — model tiers per subtask** (`top` / `mid`), cheapest model for extraction; code index opt-in only | `model-routing.md`, `SKILL.md` | Lower price on repeat work; no unused index |
+| 22 | **Applied — short orchestrator turns and per-phase token totals** in the plan | `SKILL.md`, plan template | Smaller main conversation; spend visible during the run |
 | 15 | **Applied — usage logging**: `run-lane.mjs` prints `usage: in= out= cost= session=` for claude lanes; tracker has a Tokens column | `run-lane.mjs`, plan template | Real per-role spend is visible on every run |
 
 Don't cut these, because they're what makes the output trustworthy: fresh-session QA, at least one behavioral check per phase, security triggers, and the final acceptance reviewer (folded into the single reviewer on Lite).

@@ -1,34 +1,55 @@
 # UI design intake
 
-Run this before writing clarification questions whenever the feature renders anything a user sees. Never invent a visual language.
+Run this before writing clarification questions whenever the feature renders anything a user sees. Never invent a visual language, and never let a lane pick sizes by copying the nearest component.
 
-## 1. Look first
+## 1. Find the source
 
-Search the repository in this order and stop at the first real source:
+Stop at the first real one:
 
-- Design docs: `docs/design*`, `docs/ui*`, `DESIGN.md`, `STYLEGUIDE.md`, `BRAND.md`, `design-system/`, `.storybook/`
-- Tokens and theme: `tailwind.config.*`, `theme.*`, `tokens.*`, CSS custom properties, `variables.scss`, `_variables.*`
-- Component library: an existing `components/ui`, a shadcn/Radix/Vuetify/PrimeVue/Element setup, UI dependencies in `package.json`
-- Precedent: the two or three closest existing screens or components to what is being built
-- Agent instructions: UI sections of `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`
+- A design file the user named (Figma link, frames, screenshots).
+- Design docs: `docs/design*`, `DESIGN.md`, `STYLEGUIDE.md`, `design-system/`, `.storybook/`.
+- Tokens and theme: `tailwind.config.*`, `theme.*`, `tokens.*`, CSS custom properties, `_variables.*`.
+- Component library: `components/ui`, shadcn/Radix/Vuetify/PrimeVue/Element, UI deps in `package.json`.
+- Precedent: the two or three closest existing screens.
+- UI sections of `CLAUDE.md`, `AGENTS.md`, `.cursor/rules`.
 
-Record what you found with exact paths. Precedent components count as a design source — match them.
+**A design file beats precedent for sizes, type, spacing, and colour.** Precedent still decides component reuse and behavior. Reusing an existing component's sizing when the design says otherwise is how a run ends up restyling everything in a later phase.
 
-## 2. When nothing exists
+## 2. Extract a design spec once
 
-Do not pick a look silently. Ask, and make answering cheap by offering options:
+When a design file exists, measure it **once**, before any lane, into `.plans/<feature-slug>.design-spec.md` (or `.tsv` for large tables):
 
-- **A — Match precedent.** Name the closest existing screen and mirror its spacing, type scale, and component choices. Default whenever any UI exists.
-- **B — Adopt the installed library's defaults.** Name the library found in `package.json` and use its unmodified conventions.
-- **C — Minimal system.** Propose a concrete token set in the question itself (type scale, spacing step, radius, two or three semantic colors, one font stack), and write it to `docs/design/tokens.md` if chosen.
-- **D — User supplies.** They paste a Figma link, screenshot, or brand guide.
+| Surface / component | Element | Size (w×h, padding, gap) | Type (family, size, weight, line-height) | Colour (token or hex) | Radius / border | States |
+|---|---|---|---|---|---|---|
 
-Include the accessibility floor in the same question so it is decided once: keyboard reachability, visible focus, labeled controls, WCAG AA contrast, and behavior at the project's smallest supported viewport.
+- One row per element that a lane will build. Use the project's token name when one matches; flag values with no token.
+- Do the extraction on the cheapest capable model (or the parent while it already has the design open). It is measurement, not design.
+- Every UI lane's context pack points at the spec rows it builds, and the lane builds **to the spec**, not to precedent.
 
-## 3. Carry it into the lane
+No design file → do not invent one. Ask with options:
 
-Every UI subtask assignment must name: the design source and its path, the components to reuse, the tokens to use instead of literal values, the responsive breakpoints, the empty/loading/error/success states required, and the accessibility floor.
+- **A — Match precedent.** Name the closest screen and mirror it. Default whenever UI exists.
+- **B — Library defaults.** Name the installed library and use its conventions.
+- **C — Minimal system.** Propose a concrete token set in the question; write it to `docs/design/tokens.md` if chosen.
+- **D — User supplies** a design link, screenshot, or brand guide.
 
-## 4. QA checks
+## 3. Decide density and layout up front
 
-The QA reviewer for a UI lane verifies against the named source, not against taste: tokens used rather than hard-coded values, existing components reused rather than reimplemented, all required states present, keyboard path works, focus visible, contrast meets the floor, and no layout break at the smallest supported width. Screenshot or rendered evidence beats a claim.
+Undecided layout details cause rework once real data appears. Put these in the clarification gate as one grouped question, with a proposed default for each:
+
+- What each item shows: which fields, badges, icons, markers, counts, metadata, and what is hidden.
+- Default state of each collapsible area, tab, or section (open/closed, which tab first, what scope is pre-selected).
+- Widths and proportions of panels, columns, sidebars; behavior when content overflows (truncate, wrap, scroll).
+- Empty, loading, error, and success states that apply.
+- Smallest supported viewport, and the accessibility floor: keyboard reachability, visible focus, labeled controls, WCAG AA contrast.
+
+Record the answers in the design spec.
+
+## 4. Carry it into the lane
+
+Every UI subtask assignment names: the spec path and rows, the components to reuse, tokens instead of literals, the required states, and the accessibility floor.
+
+## 5. Checks and the one design audit
+
+- Per lane: deterministic checks only where available (spec values present in the code, design-lint or detector output, visual parity hashes). A UI lane's reviewer checks against the spec, not taste.
+- **One design audit**, at the checkpoint of the last phase that changes UI: render each surface and compare it with the spec (screenshots, detector, spec-value diff). Record the result in the plan. Audit-driven fixes go into one polish lane, not one lane per finding.

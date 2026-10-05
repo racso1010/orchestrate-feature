@@ -19,31 +19,42 @@ Verbatim from the user and the clarification answers. QA and acceptance review a
 | Role | Engine / model | Notes |
 |---|---|---|
 | Planning | | current session |
-| Implementer | | |
-| QA (+security on Lite/Quick) | | independence: different vendor / fresh session |
-| Security auditor (Heavy) | | |
+| Implementer — `top` tier | | new patterns, design, auth, security |
+| Implementer — `mid` tier | | pattern repeats, styling, routine |
+| QA (+security at `combined`) | | independence: different vendor / fresh session |
+| Security auditor (`full` lanes) | | |
 | Acceptance (Quick/Heavy) | | fresh, implemented nothing |
 
 Overrides / caps: <or "none">
 
 ## Design
 
-Smallest approach that meets the requirements. Key decisions with the rejected alternative. UI design source if any. Code-index tool: <recommended? user decision>.
+Smallest approach that meets the requirements. Key decisions with the rejected alternative. UI: design source, spec at `.plans/<feature-slug>.design-spec.md`, density decisions recorded there. Code-index tool: <opt-in only: the queries lanes will run, or "not used">.
+
+## Environment
+
+Verified once before the first lane (date: <…>). Lanes copy these commands and block on environment errors instead of working around them.
+
+- Run/test location: <host / container name> · dependency install: <command; isolated volume for platform-specific deps, if containerized>
+- Test `<cmd>` · lint `<cmd>` · typecheck `<cmd>` · build `<cmd>` · app `<cmd + URL>`
+- Already failing on baseline: <list, or "none">
 
 ## Phases
 
-| Phase | Goal (MVP) | Subtasks | Status | Approved | Checkpoint: full suite · behavioral check |
-|---|---|---|---|---|---|
-| P1 | | T01 | Planning | | |
-| P2 | <placeholder — not decomposed> | — | Not started | | |
+| Phase | Goal (MVP) | Subtasks | Status | Approved | Checkpoint: full suite · behavioral check · design audit | Tokens |
+|---|---|---|---|---|---|---|
+| P1 | | T01 | Planning | | | |
+| P2 | <placeholder — not decomposed> | — | Not started | | | |
 
 ## Tracker
 
 Status: `Pending` | `In progress` | `In QA` | `Fixing` | `QA clear` | `Verified` | `Blocked` | `Descoped`.
 
-| ID | Phase | Subtask | Reqs | Deps | Owned paths | Engine/model | Session | Status | QA | Tokens |
-|---|---|---|---|---|---|---|---|---|---|---|
-| T01 | P1 | | R01 | — | | | | Pending | | |
+| ID | Phase | Subtask | Reqs | Deps | Pattern | Review | Tier | Owned paths | Session | Status | QA | Tokens |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| T01 | P1 | | R01 | — | sets P-a | full | top | | | Pending | | |
+
+Pattern: `sets <id>` / `repeats <id> (lane T0n)` / blank. Review: `checks` / `combined` / `full` (`lane-protocol.md`). Tier: `top` / `mid`.
 
 ### T01 — <title>
 
@@ -53,7 +64,7 @@ Status: `Pending` | `In progress` | `In QA` | `Fixing` | `QA clear` | `Verified`
 - **Non-goals:** <…>
 - **Tests / checks:** <suite and exact commands>
 - **Security triggers:** <list, or "none — reason">
-- **Behavioral check in review:** yes (<risky reason>) | no
+- **Review level / tier / pattern:** <level — reason> · <tier> · <pattern, and whether it shares a lane or continues a session>
 
 ## Decisions and deviations
 

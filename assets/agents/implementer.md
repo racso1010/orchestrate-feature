@@ -25,6 +25,8 @@ Run one command per shell call. No `echo` narration, no `&&`/`;` chains around r
 
 Files changed · exact checks and results · skips and why · assumptions · risks · blockers · extra files read beyond the pack.
 
-## Fix rounds
+## Continuations
 
-You may be resumed with a QA pending list. Fix only those items, rerun the affected tests, update the doc's affected lines, and hand off the same way.
+You may be resumed with a QA pending list (fix only those items, rerun the affected tests, update the doc's affected lines) or with the next subtask that repeats a pattern you just built (apply the same pattern to the new scope; write that subtask's own doc). Hand off the same way each time.
+
+Environment errors (missing dependencies, wrong platform binaries, a service not running) → stop and report them as blockers. Do not work around them; the parent fixes the environment once for every lane.

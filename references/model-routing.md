@@ -11,9 +11,9 @@ The doc merge is a script the parent runs, so it is not a routed role.
 If `.plans/routing.md` exists, show it and ask one question: **"Reuse saved routing? (yes / change …)"**. Otherwise send one message with the defaults below so the user can reply "defaults":
 
 1. **Planning** stays on the current session? (or move it to a subagent)
-2. **Implementer** engine and model.
+2. **Implementer** engine, and the model for each tier (`top`, `mid`).
 3. **QA reviewer** engine and model. Never the implementer's session.
-4. **Security auditor**: Heavy only. Lite and Quick combine it with QA, so ask only if the user wants it separate.
+4. **Security auditor** for `full`-level lanes (auth, payments, migrations, user input, first of a pattern). `combined` lanes fold it into QA.
 5. **Acceptance reviewer** (Quick, Heavy): fresh session that implemented nothing. Prefer a different vendor from the implementer.
 6. Per-subtask overrides and per-lane caps, if any.
 
@@ -24,10 +24,11 @@ Ask for a real choice on every role. "You decide" → state the routing you chos
 | Role | Default | Why |
 |---|---|---|
 | Planning | current model | already holds the requirements and repo context |
-| Implementer | a strong **mid-tier** coding model (e.g. Sonnet); top tier only for subtasks the plan flags as hard | most of the run's tokens are spent here |
+| Implementer | per subtask **tier**, set in the plan: `top` (e.g. Opus) for new patterns, design decisions, auth and security-sensitive work; `mid` (e.g. Sonnet) for pattern repeats, styling, and routine changes | most of the run's tokens are spent here |
 | QA reviewer | mid-tier, ideally a different vendor | bounded read of one diff; independence matters more than size |
 | Security auditor | same as QA, or a reasoning-heavy model | adversarial reading |
 | Acceptance reviewer | different vendor if authenticated, else the strongest model in a fresh session | last gate, reads everything; the one seat worth the top tier |
+| Extraction (design spec, code index) | cheapest capable model (e.g. Haiku), or the parent while it already has the source open | measurement, not reasoning |
 
 Fresh-session review removes anchoring. Only a different vendor removes *correlated* blind spots. If only one cross-vendor seat is worth the setup cost, spend it on acceptance. Same-model fresh sessions are acceptable; record the reduced independence. Neither replaces the behavioral checks in `lane-protocol.md`.
 
@@ -48,6 +49,8 @@ node scripts/run-lane.mjs --engine claude --model <id> --mode write \
 node scripts/run-lane.mjs --engine claude --mode write --resume <session> \
   --assignment .plans/lanes/T02.fix1.md --out .plans/lanes/T02.fix1.out.md --timeout 1200
 ```
+
+CLI resume finds sessions by working directory, so resume from the same `--cwd` the lane ran in.
 
 For claude lanes the launcher adds `--strict-mcp-config --disable-slash-commands`. Lanes need no MCP servers or skills, and loading them added ~30% input tokens per turn when measured. It also prints a `usage:` line (tokens, cost, session id). Copy it into the tracker row.
 
@@ -74,5 +77,6 @@ Underlying shapes. **Verify with `<cli> --help`**, since flags move:
 
 - Engine missing or unauthenticated → report it, offer alternatives, ask. Never silently substitute.
 - Non-zero exit or timeout → lane failed; keep the output, inspect the directory before relaunching.
+- Rate limit, usage cap, or network drop → not a failed attempt. Resume the session (`--resume <session>`; `run-lane.mjs` prints the id even on failure) and lower the parallel lane count.
 - Same failure twice → change approach or routing. No blind retries.
 - No safe launcher → ask whether a disclosed parent fallback is acceptable; otherwise `Blocked`. Never claim independent review for a parent fallback.

@@ -7,7 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { mergeMarkdown, markdownToHtml, demoteHeadings, slugify, escapeHtml } from './merge-feature-docs.mjs';
-import { buildCommand, summarizeUsage } from './run-lane.mjs';
+import { buildCommand, summarizeUsage, sessionId, isRateLimited } from './run-lane.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const mergeScript = path.join(here, 'merge-feature-docs.mjs');
@@ -180,6 +180,14 @@ test('summarizeUsage reads claude JSON and ignores anything else', () => {
   assert.equal(summarizeUsage(transcript), 'in=1002 out=40 cost=$0.1235 turns=3 session=s1');
   assert.equal(summarizeUsage('plain text transcript'), null);
   assert.equal(summarizeUsage('{"result":"no usage"}'), null);
+});
+
+test('sessionId survives failed lanes and rate limits are recognised', () => {
+  assert.equal(sessionId('{"is_error":true,"session_id":"s9","result":"API Error: 429 rate_limit_error"}'), 's9');
+  assert.equal(sessionId('not json'), null);
+  assert.ok(isRateLimited('API Error: 429 {"type":"rate_limit_error"}'));
+  assert.ok(isRateLimited('Claude usage limit reached'));
+  assert.equal(isRateLimited('TypeError: cannot read property of undefined'), false);
 });
 
 test('buildCommand rejects bad input', () => {

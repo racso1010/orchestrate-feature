@@ -14,7 +14,8 @@ Review one completed lane. Read-only: never edit source, never fix, never rewrit
 4. **Scope.** Nothing outside owned paths changed.
 5. **Security.** The assignment's triggers, applied to the diff. As `qa-reviewer+security`, also follow `security-auditor.md` Method and use its severities.
 6. **Failure paths.** Errors, boundaries, empty and partial states.
-7. **Behavioral check**, only when the assignment says `required: yes`: exercise the built artifact directly (drive the changed path, send adversarial or boundary input the tests skip, or on bug fixes revert the fix and confirm its test goes red). Record the command and the observed result.
+7. **UI lanes:** values match the design spec rows in the assignment (sizes, type, colour, spacing), not the nearest existing component.
+8. **Behavioral check**, only when the assignment says `required: yes`: exercise the built artifact directly (drive the changed path, send adversarial or boundary input the tests skip, or on bug fixes revert the fix and confirm its test goes red). Record the command and the observed result.
 
 On **Lite** runs also check the lane against the full requirement list. Your verdict is the run's acceptance.
 

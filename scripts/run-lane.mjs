@@ -92,6 +92,22 @@ export function buildCommand({ engine, prompt, model, mode = 'read', resume, bin
   };
 }
 
+const RATE_LIMITED = /rate.?limit|\b429\b|overloaded|usage limit|quota/i;
+
+// Session id from a claude JSON transcript, present on failures too. Null otherwise.
+export function sessionId(transcript) {
+  try {
+    const result = JSON.parse(transcript);
+    return typeof result?.session_id === 'string' ? result.session_id : null;
+  } catch {
+    return null;
+  }
+}
+
+export function isRateLimited(output) {
+  return RATE_LIMITED.test(output);
+}
+
 // Pulls token usage, cost and session id out of `claude -p --output-format json`.
 // Returns null for any other transcript shape.
 export function summarizeUsage(transcript) {
@@ -312,6 +328,15 @@ async function main() {
     process.stderr.write(`transcript: ${path.resolve(options.out)}\n`);
   }
 
+  const session = sessionId(result.stdout);
+  if (result.timedOut || result.code !== 0) {
+    if (isRateLimited(`${result.stdout}\n${result.stderr}`)) {
+      process.stderr.write('Rate limited: not a failed attempt. Lower parallel lanes, then resume');
+      process.stderr.write(session ? ` with --resume ${session} from the same --cwd.\n` : ' the lane session.\n');
+    } else if (session) {
+      process.stderr.write(`session: ${session} (resume with --resume after inspecting ${cwd})\n`);
+    }
+  }
   if (result.timedOut) {
     process.stderr.write(`Error: lane timed out after ${options.timeout}s. Inspect ${cwd} before relaunching.\n`);
     return 1;

@@ -28,7 +28,7 @@ Topics to scan for gaps. Ask only the ones that apply:
 - **Data**: new vs existing tables, migration on populated data, existing records, retention/audit.
 - **Contracts**: public API/event/response changes, consumers, versioning.
 - **Access**: who can do it, what an unauthorized caller sees, audit logging.
-- **UI**: design source (`ui-design-intake.md`), required states, smallest viewport, accessibility floor.
+- **UI**: design source, and the **density and layout** group from `ui-design-intake.md` §3 (what each item shows, default open/selected states, widths, overflow, states, viewport, accessibility). Ask it as one grouped question with defaults.
 - **Integration**: third-party services and sandbox credentials vs mocks, feature flag, environments.
 - **Validation**: what "done" means, anything that must be checked manually.
 - **Constraints**: deadline, performance budget, forbidden approaches, what may be assumed next time.

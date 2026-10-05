@@ -22,17 +22,18 @@ Context pack (trust it; do not re-derive it):
 Owned paths: <list>
 Change: <one bullet per concrete behavior>
 Non-goals: <what must not change>
-Design source (UI only): <path> — reuse <components>, tokens <…>, states <…>, a11y floor <…>
+Design spec (UI only): .plans/<feature-slug>.design-spec.md rows <…> — build to these values, not to precedent; reuse <components>, states <…>, a11y floor <…>
+Pattern: sets <id> | repeats <id> from <lane doc path> | none
 Security triggers: <list, or "none">
 Tests: <path/suite> covering <behavior and boundary>
-Checks: <exact commands>
+Checks: <exact commands from the plan's Environment section>
 Doc: docs/features/<feature-slug>/<subtask-id>-<slug>.md
 Stop when: <completion condition>
 
 # Reviewers only
 Diff: <git diff command or patch path>
 Implementer's reported checks: <paste exact output summary>
-Behavioral check required: yes (<risky reason>) | no
+Review level: combined | full — Behavioral check required: yes (<reason>) | no
 Re-review scope (fix rounds): <finding #s> — check only these and the fix diff
 ```
 
